@@ -20,7 +20,6 @@ void handle_syscall(struct trap_frame *f)
                 f->a0 = ch;
                 break;
             }
-
             yield();
         }
         break;

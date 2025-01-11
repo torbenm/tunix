@@ -9,10 +9,11 @@ These following extra features are to be implemented:
 - Freeing up resources when a process terminates
 - Running multiple processes at once
 - Threading
-- Interruption based scheduling
+- Timer Interruption based scheduling (almost works! other process just should not get locked into supervisor mode on waiting...)
 - A smarter scheduler than round-robin scheduling
 - Mallocing / Freeing heap memory
 - A reasonable filesystem
+- Proper interrupt handling / process blocking when waiting for e.g. I/O (and not just shutting system down...)
 
 ## Requirements
 

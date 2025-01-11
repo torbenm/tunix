@@ -12,6 +12,7 @@
         "panic.h": "c",
         "csr.h": "c",
         "std.h": "c",
-        "shrdlib.h": "c"
+        "shrdlib.h": "c",
+        "syscall.h": "c"
     }
 }

@@ -3,6 +3,10 @@
 #include "common.h"
 
 #define SCAUSE_ECALL 8
+#define SCAUSE_TIMER_INTERRUPT 0x80000005
+#define SIE_TIMER_INTERRUPT (0x1 << 5)
+#define SIE_EXTERNAL_INTERRUPT (0x1 << 9)
+#define INTERRUPT_TIME 1000000 // ~ 1/10 sec
 
 struct trap_frame
 {
@@ -38,3 +42,6 @@ struct trap_frame
     uint32_t s11;
     uint32_t sp;
 } __attribute__((packed));
+
+void init_trap();
+void next_timer();
