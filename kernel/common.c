@@ -1,4 +1,4 @@
-#include "stdlib.h"
+#include "common.h"
 #include "sbi.h"
 
 void *memset(void *buf, char c, size_t n)

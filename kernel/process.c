@@ -1,6 +1,7 @@
-#include "stdlib.h"
+#include "common.h"
 #include "process.h"
 #include "mem.h"
+#include "panic.h"
 
 struct process procs[PROCS_MAX]; // All process control structures.
 struct process *current_proc;    // Currently running process

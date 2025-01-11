@@ -1,5 +1,5 @@
 #include "process.h"
-#include "stdlib.h"
+#include "common.h"
 
 void proc_internals(char proc_name)
 {

@@ -1,5 +1,6 @@
 #include "kernel.h"
-#include "stdlib.h"
+#include "common.h"
+#include "csr.h"
 #include "mem.h"
 #include "process.h"
 #include "user_processes.h"
@@ -8,14 +9,15 @@ extern char __bss[], __bss_end[], __stack_top[];
 
 void init_kernel()
 {
+    memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
+
+    WRITE_CSR(stvec, (uint32_t)kernel_entry); // new
     printf("Tunix started.\n");
 }
 
 void kernel_main(void)
 {
-    memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 
-    WRITE_CSR(stvec, (uint32_t)kernel_entry); // new
     init_kernel();
     init_process();
 
@@ -30,18 +32,6 @@ void kernel_main(void)
     {
         __asm__ __volatile__("wfi");
     }
-}
-
-__attribute__((section(".text.boot")))
-__attribute__((naked)) void
-boot(void)
-{
-    __asm__ __volatile__(
-        "mv sp, %[stack_top]\n" // Set the stack pointer
-        "j kernel_main\n"       // Jump to the kernel main function
-        :
-        : [stack_top] "r"(__stack_top) // Pass the stack top address as %[stack_top]
-    );
 }
 
 __attribute__((naked))
@@ -126,13 +116,4 @@ kernel_entry(void)
         "lw s11, 4 * 29(sp)\n"
         "lw sp,  4 * 30(sp)\n"
         "sret\n");
-}
-
-void handle_trap(struct trap_frame *f)
-{
-    uint32_t scause = READ_CSR(scause);
-    uint32_t stval = READ_CSR(stval);
-    uint32_t user_pc = READ_CSR(sepc);
-
-    PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }

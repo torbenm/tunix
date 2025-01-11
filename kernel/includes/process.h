@@ -1,4 +1,4 @@
-#include "stdlib.h"
+#include "common.h"
 
 #define PROCS_MAX 8     // Maximum number of processes
 #define PROC_UNUSED 0   // Unused process control structure

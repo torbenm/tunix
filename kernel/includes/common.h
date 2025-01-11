@@ -27,12 +27,3 @@ int strcmp(const char *s1, const char *s2);
 void putchar(char ch);
 void printf(const char *fmt, ...);
 void sleep(int iterations);
-
-#define PANIC(fmt, ...)                                                       \
-    do                                                                        \
-    {                                                                         \
-        printf("PANIC: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-        while (1)                                                             \
-        {                                                                     \
-        }                                                                     \
-    } while (0)

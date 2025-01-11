@@ -1,34 +1,10 @@
-#include "stdlib.h"
+#include "common.h"
 #include "mem.h"
+#include "panic.h"
 
 extern char __free_ram[], __free_ram_end[];
 
-paddr_t alloc_pages(uint32_t n)
-{
-    static paddr_t next_page = 0;
-    if (!next_page)
-        next_page = (paddr_t)__free_ram;
-    paddr_t paddr = next_page;
-    next_page += n * PAGE_SIZE;
-
-    if (next_page > (paddr_t)__free_ram_end)
-        PANIC("out of memory");
-
-    memset((void *)paddr, 0, n * PAGE_SIZE);
-
-    return paddr;
-}
-
-void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags)
-{
-    /*
-    table1:
-    vaddr: The virtual address we want to map
-    paddr: The physical address we will map
-    flags: The flags we want to set
-    */
-
-    /*
+/*
     A full documentation can be found on Page 104 of
     the privileged instruction documentation for RISCV.
 
@@ -61,7 +37,33 @@ void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags)
 
     ! Important note: While we store the page table in memory,
     the TLB will cache the latest entries for performance.
+*/
+
+paddr_t alloc_pages(uint32_t n)
+{
+    static paddr_t next_page = 0;
+    if (!next_page)
+        next_page = (paddr_t)__free_ram;
+    paddr_t paddr = next_page;
+    next_page += n * PAGE_SIZE;
+
+    if (next_page > (paddr_t)__free_ram_end)
+        PANIC("out of memory");
+
+    memset((void *)paddr, 0, n * PAGE_SIZE);
+
+    return paddr;
+}
+
+void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags)
+{
+    /*
+    table1: Reference to the in-memory pagetable
+    vaddr: The virtual address we want to map
+    paddr: The physical address we will map
+    flags: The flags we want to set
     */
+
     if (!is_aligned(vaddr, PAGE_SIZE))
         PANIC("unaligned vaddr %x", vaddr);
 

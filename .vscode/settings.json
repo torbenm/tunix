@@ -5,6 +5,8 @@
         "mem.h": "c",
         "stdlib.h": "c",
         "kernel.h": "c",
-        "process.h": "c"
+        "process.h": "c",
+        "trap.h": "c",
+        "common.h": "c"
     }
 }
