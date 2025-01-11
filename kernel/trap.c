@@ -14,7 +14,6 @@ void handle_trap(struct trap_frame *f)
     if (scause == SCAUSE_TIMER_INTERRUPT)
     {
         next_timer();
-        putchar('T');
         yield();
         return;
     }

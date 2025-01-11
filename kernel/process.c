@@ -3,6 +3,7 @@
 #include "process.h"
 #include "mem.h"
 #include "panic.h"
+#include "virtio.h"
 
 struct process procs[PROCS_MAX]; // All process control structures.
 struct process *current_proc;    // Currently running process
@@ -64,6 +65,8 @@ struct process *create_process(const void *image, size_t image_size)
          paddr < (paddr_t)__free_ram_end;
          paddr += PAGE_SIZE)
         map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+
+    map_page(page_table, VIRTIO_BLK_PADDR, VIRTIO_BLK_PADDR, PAGE_R | PAGE_W);
 
     // Map user pages. We are now compying the image into the allocated pages.
     for (uint32_t offset = 0; offset < image_size; offset += PAGE_SIZE)

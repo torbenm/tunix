@@ -1,3 +1,5 @@
+#pragma once
+
 #define SATP_SV32 (1u << 31) // single bit in the satp register which indicates "enable paging in Sv32 mode"
 #define PAGE_V (1 << 0)      // "Valid" bit (entry is enabled) == 0000.0001
 #define PAGE_R (1 << 1)      // Readable == 0000.0010
