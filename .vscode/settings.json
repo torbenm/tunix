@@ -8,6 +8,7 @@
         "process.h": "c",
         "trap.h": "c",
         "common.h": "c",
-        "user_processes.h": "c"
+        "user_processes.h": "c",
+        "panic.h": "c"
     }
 }

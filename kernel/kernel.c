@@ -4,6 +4,7 @@
 #include "mem.h"
 #include "process.h"
 #include "user_processes.h"
+#include "panic.h"
 
 extern char __bss[], __bss_end[], __stack_top[];
 
@@ -21,12 +22,10 @@ void kernel_main(void)
     init_kernel();
     init_process();
 
-    yield();
+    start_shell_app();
 
-    for (;;)
-    {
-        __asm__ __volatile__("wfi");
-    }
+    yield();
+    PANIC("switched to idle process");
 }
 
 __attribute__((naked))

@@ -6,6 +6,9 @@
 #define PROC_RUNNING 2  // Runnable process
 #define PROC_SLEEPING 3 // Sleeping/Blocked process
 
+#define USER_BASE 0x1000000
+#define SSTATUS_SPIE (1 << 5)
+
 struct process
 {
     int pid;              // Process ID
@@ -15,7 +18,7 @@ struct process
     uint8_t stack[8192];  // Kernel stack
 };
 
-struct process *create_process(uint32_t);
+struct process *create_process(const void *, size_t);
 void switch_context(uint32_t *, uint32_t *);
 void yield(void);
 void init_process();

@@ -21,7 +21,7 @@ $(OUT_DIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(OUT_DIR)/kernel.elf: $(OBJ)
-	$(CC) $(CFLAGS) $^ $(_APPS) -o $(OUT_DIR)/kernel.elf $(LINKER_FLAGS)
+	$(CC) $(CFLAGS) $(_APPS) $^ -o $(OUT_DIR)/kernel.elf $(LINKER_FLAGS)
 
 
 .PHONY: clean

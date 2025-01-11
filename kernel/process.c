@@ -9,17 +9,18 @@ struct process *idle_proc;       // Idle process
 
 extern char __kernel_base[], __free_ram_end[];
 
-void idle_proc_method()
+__attribute__((naked)) void user_entry(void)
 {
-    // can sleep for ever if we have interuption based switching
-    while (1)
-    {
-        sleep(10000);
-        yield();
-    }
+    __asm__ __volatile__(
+        "csrw sepc, %[sepc]        \n"
+        "csrw sstatus, %[sstatus]  \n"
+        "sret                      \n"
+        :
+        : [sepc] "r"(USER_BASE),
+          [sstatus] "r"(SSTATUS_SPIE));
 }
 
-struct process *create_process(uint32_t pc)
+struct process *create_process(const void *image, size_t image_size)
 {
     // Find an unused process control structure.
     struct process *proc = NULL;
@@ -39,19 +40,19 @@ struct process *create_process(uint32_t pc)
     // Stack callee-saved registers. These register values will be restored in
     // the first context switch in switch_context.
     uint32_t *sp = (uint32_t *)&proc->stack[sizeof(proc->stack)];
-    *--sp = 0;            // s11
-    *--sp = 0;            // s10
-    *--sp = 0;            // s9
-    *--sp = 0;            // s8
-    *--sp = 0;            // s7
-    *--sp = 0;            // s6
-    *--sp = 0;            // s5
-    *--sp = 0;            // s4
-    *--sp = 0;            // s3
-    *--sp = 0;            // s2
-    *--sp = 0;            // s1
-    *--sp = 0;            // s0
-    *--sp = (uint32_t)pc; // ra
+    *--sp = 0;                    // s11
+    *--sp = 0;                    // s10
+    *--sp = 0;                    // s9
+    *--sp = 0;                    // s8
+    *--sp = 0;                    // s7
+    *--sp = 0;                    // s6
+    *--sp = 0;                    // s5
+    *--sp = 0;                    // s4
+    *--sp = 0;                    // s3
+    *--sp = 0;                    // s2
+    *--sp = 0;                    // s1
+    *--sp = 0;                    // s0
+    *--sp = (uint32_t)user_entry; // ra
 
     // Map kernel pages - allocate first level page
     // Currently we just have the kernel running (also for user processes)
@@ -62,6 +63,22 @@ struct process *create_process(uint32_t pc)
          paddr < (paddr_t)__free_ram_end;
          paddr += PAGE_SIZE)
         map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+
+    // Map user pages. We are now compying the image into the allocated pages.
+    for (uint32_t offset = 0; offset < image_size; offset += PAGE_SIZE)
+    {
+        paddr_t page = alloc_pages(1);
+
+        // Handle the case where the data to be copied is smaller than the
+        // page size.
+        size_t remaining = image_size - offset;
+        size_t copy_size = PAGE_SIZE <= remaining ? PAGE_SIZE : remaining;
+
+        // Fill and map the page.
+        memcpy((void *)page, image + offset, copy_size);
+        map_page(page_table, USER_BASE + offset, page,
+                 PAGE_U | PAGE_R | PAGE_W | PAGE_X);
+    }
 
     // Initialize fields.
     proc->pid = i + 1;
@@ -108,7 +125,7 @@ void yield(void)
 
 void init_process()
 {
-    idle_proc = create_process((uint32_t)idle_proc_method);
+    idle_proc = create_process(NULL, 0);
     idle_proc->pid = -1; // idle
     current_proc = idle_proc;
 

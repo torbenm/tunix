@@ -1,6 +1,13 @@
 #include "process.h"
 #include "common.h"
 
+extern char _binary_out_shell_bin_start[], _binary_out_shell_bin_size[];
+
+void start_shell_app()
+{
+    create_process(_binary_out_shell_bin_start, (size_t)_binary_out_shell_bin_size);
+}
+
 void proc_internals(char proc_name)
 {
     int x = 0;
