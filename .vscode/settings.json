@@ -7,6 +7,7 @@
         "kernel.h": "c",
         "process.h": "c",
         "trap.h": "c",
-        "common.h": "c"
+        "common.h": "c",
+        "user_processes.h": "c"
     }
 }

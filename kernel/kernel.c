@@ -21,11 +21,6 @@ void kernel_main(void)
     init_kernel();
     init_process();
 
-    create_process((uint32_t)proc_a_entry);
-    create_process((uint32_t)proc_b_entry);
-    create_process((uint32_t)proc_c_entry);
-    create_process((uint32_t)proc_d_entry);
-    create_process((uint32_t)proc_e_entry);
     yield();
 
     for (;;)
