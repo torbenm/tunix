@@ -6,6 +6,7 @@
 #include "process.h"
 #include "user_processes.h"
 #include "panic.h"
+#include "common.h"
 
 extern char __bss[], __bss_end[], __stack_top[];
 
@@ -26,7 +27,8 @@ void kernel_main(void)
     start_shell_app();
 
     yield();
-    PANIC("switched to idle process");
+    printf("No more running processes. Shutting down system...");
+    shutdown();
 }
 
 __attribute__((naked))

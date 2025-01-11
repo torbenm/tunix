@@ -17,3 +17,8 @@ int getchar(void)
     struct sbiret ret = sbi_call(0, 0, 0, 0, 0, 0, 0, 2);
     return ret.error;
 }
+
+void shutdown(void)
+{
+    sbi_call(0, 0, 0, 0, 0, 0, 0, 0x8);
+}
