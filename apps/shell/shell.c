@@ -16,6 +16,15 @@ void main(void)
             printf("Hello world from shell!\n");
         else if (strcmp(input, "exit") == 0)
             exit();
+        else if (strcmp(input, "readfile") == 0)
+        {
+            char buf[128];
+            int len = readfile("hello.txt", buf, sizeof(buf));
+            buf[len] = '\0';
+            printf("%s\n", buf);
+        }
+        else if (strcmp(input, "writefile") == 0)
+            writefile("hello.txt", "Hello from shell!\n", 19);
         else
             printf("unknown command: %s\n", input);
     }

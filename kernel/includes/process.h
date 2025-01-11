@@ -11,7 +11,8 @@
 #define WAIT_FOR_INPUT 1
 
 #define USER_BASE 0x1000000
-#define SSTATUS_SPIE (1 << 5) // 10000
+#define SSTATUS_SPIE (1 << 5)
+#define SSTATUS_SUM (1 << 18)
 
 struct process
 {

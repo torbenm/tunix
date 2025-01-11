@@ -19,7 +19,7 @@ __attribute__((naked)) void user_entry(void)
         "sret                      \n"
         :
         : [sepc] "r"(USER_BASE),
-          [sstatus] "r"(SSTATUS_SPIE));
+          [sstatus] "r"(SSTATUS_SPIE | SSTATUS_SUM));
 }
 
 struct process *create_process(const void *image, size_t image_size)

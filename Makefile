@@ -11,6 +11,9 @@ LLVM_HOME=/opt/homebrew/opt/llvm/bin
 DEPS=$(KERNEL_FILE)
 APPS=$(SHELL_FILE)
 
+disk.tar:
+	cd disk && tar cf ../disk.tar --format=ustar *
+
 .phony: $(KERNEL_FILE)
 $(KERNEL_FILE): $(APPS)
 	$(MAKE) -C kernel out/kernel.elf APPS=$(APPS)
@@ -20,10 +23,10 @@ $(SHELL_FILE):
 	$(MAKE) -C apps/shell out/shell.bin.o
 
 .phony: boot
-boot: $(DEPS)
+boot: $(DEPS) disk.tar
 	$(QEMU) -machine virt -bios default -nographic -serial mon:stdio --no-reboot \
     -d unimp,guest_errors,int,cpu_reset -D qemu.log \
-    -drive id=drive0,file=hdd/lorem.txt,format=raw,if=none \
+    -drive id=drive0,file=disk.tar,format=raw,if=none \
     -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0 \
     -kernel $(KERNEL_FILE)
 
@@ -46,3 +49,4 @@ clean:
 	make -C apps/lib clean
 	make -C apps/shell clean
 	make -C shrdlib clean
+	rm disk.tar
