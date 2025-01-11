@@ -1,9 +1,12 @@
 #include "stdlib.h"
 #include "process.h"
+#include "mem.h"
 
 struct process procs[PROCS_MAX]; // All process control structures.
 struct process *current_proc;    // Currently running process
 struct process *idle_proc;       // Idle process
+
+extern char __kernel_base[], __free_ram_end[];
 
 void idle_proc_method()
 {
@@ -49,10 +52,21 @@ struct process *create_process(uint32_t pc)
     *--sp = 0;            // s0
     *--sp = (uint32_t)pc; // ra
 
+    // Map kernel pages - allocate first level page
+    // Currently we just have the kernel running (also for user processes)
+    // so we do not really need custom pages, just one page table for all.
+    // So at the moment, all page tables will be exactly the same.
+    uint32_t *page_table = (uint32_t *)alloc_pages(1);
+    for (paddr_t paddr = (paddr_t)__kernel_base;
+         paddr < (paddr_t)__free_ram_end;
+         paddr += PAGE_SIZE)
+        map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+
     // Initialize fields.
     proc->pid = i + 1;
     proc->state = PROC_READY;
     proc->sp = (uint32_t)sp;
+    proc->page_table = page_table;
     return proc;
 }
 
@@ -75,6 +89,16 @@ void yield(void)
     if (next == current_proc)
         return;
 
+    __asm__ __volatile__(
+        "sfence.vma\n"
+        "csrw satp, %[satp]\n"
+        "sfence.vma\n"
+        "csrw sscratch, %[sscratch]\n"
+        :
+        // Don't forget the trailing comma!
+        : [satp] "r"(SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE)),
+          [sscratch] "r"((uint32_t)&next->stack[sizeof(next->stack)]));
+
     // Context switch
     struct process *prev = current_proc;
     current_proc = next;
@@ -94,6 +118,7 @@ __attribute__((naked)) void switch_context(uint32_t *prev_sp,
                                            uint32_t *next_sp)
 {
     __asm__ __volatile__(
+
         "addi sp, sp, -13 * 4\n" // Allocate stack space for 13 4-byte registers
         "sw ra,  0  * 4(sp)\n"   // Save callee-saved registers only
         "sw s0,  1  * 4(sp)\n"

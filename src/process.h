@@ -8,10 +8,11 @@
 
 struct process
 {
-    int pid;             // Process ID
-    int state;           // Process state
-    vaddr_t sp;          // Stack pointer
-    uint8_t stack[8192]; // Kernel stack
+    int pid;              // Process ID
+    int state;            // Process state
+    vaddr_t sp;           // Stack pointer
+    uint32_t *page_table; // Page Table
+    uint8_t stack[8192];  // Kernel stack
 };
 
 struct process *create_process(uint32_t);
