@@ -1,4 +1,5 @@
-#include "common.h"
+#include <shrdlib.h>
+
 #include "process.h"
 #include "mem.h"
 #include "panic.h"
@@ -121,6 +122,20 @@ void yield(void)
     struct process *prev = current_proc;
     current_proc = next;
     switch_context(&prev->sp, &next->sp);
+}
+
+void exit_process(int pid)
+{
+    printf("process %d exited\n", pid);
+    // Pid is always index + 1
+    procs[pid - 1].state = PROC_EXITED;
+    yield();
+    PANIC("unreachable");
+}
+
+void exit_current_process()
+{
+    exit_process(current_proc->pid);
 }
 
 void init_process()

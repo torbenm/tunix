@@ -1,4 +1,5 @@
-#include "common.h"
+#include <shrdlib.h>
+
 #include "mem.h"
 #include "panic.h"
 

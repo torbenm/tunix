@@ -1,5 +1,18 @@
-# TorbOS - 32-but RiskV OS
+# Tunix - 32-bit RiskV OS
 
+Follows the tutorial at https://operating-system-in-1000-lines.vercel.app/en/14-system-call.
+
+The following extra features have been implemented:
+- None so far
+
+These following extra features are to be implemented:
+- Freeing up resources when a process terminates
+- Running multiple processes at once
+- Threading
+- Interruption based scheduling
+- A smarter scheduler than round-robin scheduling
+- Mallocing / Freeing heap memory
+- A reasonable filesystem
 
 ## Requirements
 

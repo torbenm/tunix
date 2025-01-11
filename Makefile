@@ -42,3 +42,4 @@ clean:
 	make -C kernel clean
 	make -C apps/lib clean
 	make -C apps/shell clean
+	make -C shrdlib clean

@@ -1,5 +1,6 @@
+#include <shrdlib.h>
+
 #include "process.h"
-#include "common.h"
 
 extern char _binary_out_shell_bin_start[], _binary_out_shell_bin_size[];
 

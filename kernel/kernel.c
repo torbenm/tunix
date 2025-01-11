@@ -1,5 +1,6 @@
+#include <shrdlib.h>
+
 #include "kernel.h"
-#include "common.h"
 #include "csr.h"
 #include "mem.h"
 #include "process.h"

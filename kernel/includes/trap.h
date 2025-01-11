@@ -1,4 +1,8 @@
+#pragma once
+
 #include "common.h"
+
+#define SCAUSE_ECALL 8
 
 struct trap_frame
 {

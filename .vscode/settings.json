@@ -9,6 +9,9 @@
         "trap.h": "c",
         "common.h": "c",
         "user_processes.h": "c",
-        "panic.h": "c"
+        "panic.h": "c",
+        "csr.h": "c",
+        "std.h": "c",
+        "shrdlib.h": "c"
     }
 }
