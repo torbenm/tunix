@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "unistd.h": "c",
+        "sbi.h": "c",
+        "mem.h": "c",
+        "stdlib.h": "c",
+        "kernel.h": "c",
+        "process.h": "c"
+    }
+}

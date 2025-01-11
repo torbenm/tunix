@@ -1,0 +1,31 @@
+# TorbOS - 32-but RiskV OS
+
+
+## Requirements
+
+```
+brew install llvm lld qemu
+```
+
+Check that
+```
+clang -print-targets | grep riscv32
+```
+returns something. If not, you should use the clang located at `/opt/homebrew/opt/llvm/bin/clang` (or similar).
+
+
+## Interesting Links
+
+- [Tutorial that this repo follows](https://operating-system-in-1000-lines.vercel.app/en/02-assembly)
+- [RiskV Instruction Set](https://riscv.org/technical/specifications/)
+
+
+Potentially optional:
+```
+If you need to have llvm first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> /Users/tmey/.zshrc
+
+For compilers to find llvm you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+```
