@@ -100,6 +100,8 @@ void printf(const char *fmt, ...)
             case 'x':
             { // Print an integer in hexadecimal.
                 int value = va_arg(vargs, int);
+                putchar('0');
+                putchar('x');
                 for (int i = 7; i >= 0; i--)
                 {
                     int nibble = (value >> (i * 4)) & 0xf;
@@ -137,4 +139,10 @@ void readinput(char *output, int maxlen)
             output[i] = ch;
         }
     }
+}
+
+void sleep(int iterations)
+{
+    for (int i = 0; i < iterations; i++)
+        __asm__ __volatile__("nop");
 }

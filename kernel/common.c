@@ -1,12 +1,6 @@
 #include "common.h"
 #include "sbi.h"
 
-void sleep(int iterations)
-{
-    for (int i = 0; i < iterations; i++)
-        __asm__ __volatile__("nop");
-}
-
 void putchar(char ch)
 {
     sbi_call(ch, 0, 0, 0, 0, 0, 0, 1);

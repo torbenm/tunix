@@ -3,28 +3,49 @@
 #include "trap.h"
 #include "csr.h"
 #include "panic.h"
-#include "process.h"
+#include "proc.h"
 #include "syscall.h"
+
+void trap_panic(const char *mesg)
+{
+    uint32_t scause = READ_CSR(scause);
+    uint32_t stval = READ_CSR(stval);
+    uint32_t user_pc = READ_CSR(sepc);
+
+    PANIC("\n\n%s scause=0x%x, stval=0x%x, sepc=0x%x\n", mesg, scause, stval, user_pc);
+}
 
 void handle_trap(struct trap_frame *f)
 {
     uint32_t scause = READ_CSR(scause);
     uint32_t stval = READ_CSR(stval);
     uint32_t user_pc = READ_CSR(sepc);
-    if (scause == SCAUSE_TIMER_INTERRUPT)
+    char *err_mesg;
+
+    switch (scause)
     {
+    // Expected traps...
+    case SCAUSE_TIMER_INTERRUPT:
         next_timer();
         yield();
-        return;
-    }
-    else if (scause == SCAUSE_ECALL)
-    {
+        break;
+    case SCAUSE_ECALL:
         handle_syscall(f);
         user_pc += 4; // increase program counter so that we skip to the next instruction
-    }
-    else
-    {
-        PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
+        break;
+    // Error Handling below...
+    case SCAUSE_PAGE_FAULT:
+        trap_panic("Page Fault!");
+        break;
+    case SCAUSE_ILLEGAL_INSTRUCTION:
+        trap_panic("Illegal Instruction!");
+        break;
+    case 7:
+        trap_panic("Store/AMO access fault!");
+        break;
+    default:
+        trap_panic("Unexpected Trap!");
+        break;
     }
     WRITE_CSR(sepc, user_pc);
 }

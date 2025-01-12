@@ -21,6 +21,11 @@ int getchar()
     return syscall(SYS_GETCHAR, 0, 0, 0);
 }
 
+int fork()
+{
+    return syscall(SYS_FORK, 0, 0, 0);
+}
+
 int readfile(const char *filename, char *buf, int len)
 {
     return syscall(SYS_READFILE, (int)filename, (int)buf, len);

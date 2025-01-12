@@ -3,7 +3,7 @@
 #include "mem.h"
 #include "panic.h"
 
-extern char __free_ram[], __free_ram_end[];
+extern char __free_ram[], __free_ram_end[], __kernel_base[];
 
 /*
     A full documentation can be found on Page 104 of
@@ -49,7 +49,7 @@ paddr_t alloc_pages(uint32_t n)
     next_page += n * PAGE_SIZE;
 
     if (next_page > (paddr_t)__free_ram_end)
-        PANIC("out of memory");
+        PANIC("out of memory: %d", next_page);
 
     memset((void *)paddr, 0, n * PAGE_SIZE);
 

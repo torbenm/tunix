@@ -2,7 +2,7 @@
 
 #include "kernel.h"
 #include "mem.h"
-#include "process.h"
+#include "proc.h"
 #include "user_processes.h"
 #include "panic.h"
 #include "common.h"
@@ -24,13 +24,21 @@ void kernel_main(void)
 
     init_kernel();
     init_trap();
-    init_process();
+    init_proc();
+
     init_virtio_blk();
     init_tarfs();
 
     start_shell_app();
 
+    // Might be better moved to scheduler
     yield();
-    printf("No more running processes. Shutting down system...");
-    shutdown();
+    while (1)
+    {
+        if (!idle())
+        {
+            printf("All running process have been exited. Shutting down system...");
+            shutdown();
+        }
+    }
 }

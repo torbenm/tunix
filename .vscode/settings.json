@@ -5,7 +5,7 @@
         "mem.h": "c",
         "stdlib.h": "c",
         "kernel.h": "c",
-        "process.h": "c",
+        "proc.h": "c",
         "trap.h": "c",
         "common.h": "c",
         "user_processes.h": "c",
@@ -13,6 +13,7 @@
         "csr.h": "c",
         "std.h": "c",
         "shrdlib.h": "c",
-        "syscall.h": "c"
+        "syscall.h": "c",
+        "tarfs.h": "c"
     }
 }

@@ -7,6 +7,8 @@
 #define PAGE_X (1 << 3)      // Executable == 0000.1000
 #define PAGE_U (1 << 4)      // User (accessible in user mode) == 0001.0000
 #define PAGE_SIZE 4096
+#define MAX_VIRT_ADDR 0x10000000
+#define VIRT_TRAP_TABLE (MAX_VIRT_ADDR - PAGE_SIZE)
 
 paddr_t alloc_pages(uint32_t n);
 

@@ -2,7 +2,7 @@
 
 #include "trap.h"
 #include "panic.h"
-#include "process.h"
+#include "proc.h"
 #include "tarfs.h"
 
 void handle_syscall(struct trap_frame *f)
@@ -58,6 +58,9 @@ void handle_syscall(struct trap_frame *f)
     }
     case SYS_EXIT:
         exit_current_process();
+        break;
+    case SYS_FORK:
+        f->a0 = fork();
         break;
     default:
         PANIC("unexpected syscall a3=%x\n", f->a3);
