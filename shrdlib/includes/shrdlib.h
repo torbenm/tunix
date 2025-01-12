@@ -26,6 +26,7 @@ typedef uint32_t vaddr_t;
 #define SYS_READFILE 4
 #define SYS_WRITEFILE 5
 #define SYS_FORK 6
+#define SYS_YIELD 7
 
 void *memset(void *buf, char c, size_t n);
 void *memcpy(void *dst, const void *src, size_t n);

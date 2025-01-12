@@ -43,7 +43,11 @@ struct trap_frame
     uint32_t s10;
     uint32_t s11;
     uint32_t sp;
+    uint32_t epc;
 } __attribute__((packed));
 
 void init_trap();
 void next_timer();
+void trap_exit(void);
+void trap_entry(void);
+void leavetrap(struct trap_frame *f);

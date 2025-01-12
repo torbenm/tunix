@@ -62,6 +62,9 @@ void handle_syscall(struct trap_frame *f)
     case SYS_FORK:
         f->a0 = fork();
         break;
+    case SYS_YIELD:
+        yield();
+        break;
     default:
         PANIC("unexpected syscall a3=%x\n", f->a3);
     }

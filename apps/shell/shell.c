@@ -3,7 +3,7 @@
 
 #define MAX_INPUT 128
 
-void background_proc();
+void background_proc(const char x);
 
 void main(void)
 {
@@ -16,12 +16,24 @@ void main(void)
 
         if (strcmp(input, "hello") == 0)
             printf("Hello world from shell!\n");
-        else if (strcmp(input, "bg") == 0)
+        else if (strcmp(input, "bgB") == 0)
         {
             printf("Starting bg proc...\n");
             if (fork() == 0)
             {
-                background_proc();
+                background_proc('B');
+            }
+            else
+            {
+                printf("this is the parent...");
+            }
+        }
+        else if (strcmp(input, "bgA") == 0)
+        {
+            printf("Starting bg proc...\n");
+            if (fork() == 0)
+            {
+                background_proc('A');
             }
             else
             {
@@ -46,11 +58,11 @@ void main(void)
         ;
 }
 
-void background_proc()
+void background_proc(const char x)
 {
     while (1)
     {
-        putchar('B');
-        sleep(30000000);
+        putchar(x);
+        sleep(3000000);
     }
 }

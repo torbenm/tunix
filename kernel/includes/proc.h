@@ -10,8 +10,6 @@
 #define PROC_SLEEPING 3 // Sleeping/Blocked process
 #define PROC_EXITED 4   // Exited process
 
-#define VIRT_TRAP_TABLE
-
 #define THRD_READY 1
 #define THRD_RUNNING 2
 #define THRD_SLEEPING 3

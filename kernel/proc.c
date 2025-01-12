@@ -5,6 +5,7 @@
 #include "panic.h"
 #include "virtio.h"
 #include "csr.h"
+#include "trap.h"
 
 struct process procs[PROCS_MAX]; // All process control structures.
 struct thread threads[THRDS_MAX];
@@ -49,25 +50,21 @@ int idle()
     return 1; // Keep idling
 }
 
+extern char _binary_out_shell_bin_start[], _binary_out_shell_bin_size[];
+
 int fork(void)
 {
     // What we need to do:
     // Copy memory
     // Copy stack
     // Copy registers
-    struct process *proc = alloc_proc();
+    struct process *proc = create_process(_binary_out_shell_bin_start, (size_t)_binary_out_shell_bin_size);
+
     // Copy context...
-    proc->context.sp = (uint32_t)(&current_proc->stack[sizeof(current_proc->stack)]) - 4 * 31;
     memcpy(proc->stack, current_proc->stack, sizeof(current_proc->stack));
-
-    uint32_t stack_depth = (uint32_t)(&current_proc->stack[sizeof(current_proc->stack)]) - 4 * 31;
-    uint32_t sscratch = READ_CSR(sscratch);
-    printf("Stack depth %x %x\n", stack_depth, sscratch);
-
-    printf("Proc is %d\n", proc->pid);
-    printf("Stack @ %x from %x\n", proc->stack, current_proc->stack);
-    printf("StackPointer @ %x from %x\n", proc->context.sp, current_proc->context.sp);
-    printf("Context @ %x from %x\n", proc->context, current_proc->context);
+    *(proc->trap_frame) = *(current_proc->trap_frame);
+    proc->trap_frame->epc += 4;
+    proc->trap_frame->a0 = 0;
 
     return proc->pid;
 }
@@ -97,12 +94,17 @@ struct process *find_next_proc()
 __attribute__((naked)) void enter_usermode(void)
 {
     __asm__ __volatile__(
-        "csrw sepc, %[sepc]        \n"
         "csrw sstatus, %[sstatus]  \n"
-        "sret                      \n"
         :
-        : [sepc] "r"(USER_BASE),
-          [sstatus] "r"(SSTATUS_SPIE | SSTATUS_SUM));
+        : [sstatus] "r"(SSTATUS_SPIE | SSTATUS_SUM));
+}
+
+void user_entry(void)
+{
+    // printf("Enter user mode.");
+    // printf("Leave trap on %x.", (struct trap_frame *)VIRT_TRAP_TABLE);
+    leavetrap((struct trap_frame *)VIRT_TRAP_TABLE);
+    enter_usermode();
 }
 
 struct process *alloc_proc()
@@ -148,11 +150,12 @@ struct process *create_process(const void *image, size_t image_size)
 
         // Fill and map the page.
         memcpy((void *)page, image + off, copy_size);
-        printf("Mapping virtual address %x to physical address %x\n", USER_BASE + off, page);
+        // printf("Mapping virtual aeddress %x to physical address %x\n", USER_BASE + off, page);
         map_page(proc->page_table, USER_BASE + off, page,
                  PAGE_U | PAGE_R | PAGE_W | PAGE_X);
     }
-
+    proc->trap_frame->epc = USER_BASE;
+    // printf("Initialized.");
     return proc;
 }
 
@@ -176,26 +179,29 @@ void yield(void)
     if (next == current_proc)
         return;
 
-    printf("Next: %d\n", next->pid);
-    printf("Next satp: %x\n", SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE));
-    printf("Next sscratch: %x\n", (uint32_t)&next->stack[sizeof(next->stack)]);
-    printf("Switching context");
+    // printf("Next: %d\n", next->pid);
+    // printf("Next satp: %x\n", SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE));
+    // printf("Next sscratch: %x\n", (uint32_t)&next->stack[sizeof(next->stack)]);
+    // printf("Next sp: %x\n", next->context.sp);
+    // printf("Next ra: %x\n", next->context.ra);
+    // printf("Prev ra: %x\n", current_proc->context.ra);
+    // next->context.ra = (uint32_t)enter_usermode; // Why does it not have anything here by default?...
+    // printf("Next ra: %x\n", next->context.ra);
     __asm__ __volatile__(
         "sfence.vma\n"
         "csrw satp, %[satp]\n" // Page table...
         "sfence.vma\n"
-        "csrw sscratch, %[sscratch]\n" // sscratch... aka stack
         :
         // Don't forget the trailing comma!
-        : [satp] "r"(SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE)),
-          [sscratch] "r"((uint32_t)&next->stack[sizeof(next->stack)]));
+        : [satp] "r"(SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE)));
 
-    printf("Did not get here...");
+    // printf("Switching context now...\n");
     // Context switch
     struct process *prev = current_proc;
     current_proc = next;
-    printf("Context that will be loaded has sp pointing at %x", next->context.ra);
     switch_context(&prev->context, &next->context);
+    // printf("Prev ra: %x\n", current_proc->context.ra);
+    // printf("Unreachable");
 }
 
 void exit_process(int pid)
@@ -242,18 +248,18 @@ __attribute__((naked)) void switch_context(struct context *prev_ctxt,
 
         "sw ra,  0  * 4(a0)\n" // Save callee-saved registers only
         "sw sp,  1  * 4(a0)\n" // Save callee-saved registers only
-        "sw s0,  3  * 4(a0)\n"
-        "sw s1,  4  * 4(a0)\n"
-        "sw s2,  5  * 4(a0)\n"
-        "sw s3,  6  * 4(a0)\n"
-        "sw s4,  7  * 4(a0)\n"
-        "sw s5,  8  * 4(a0)\n"
-        "sw s6,  9  * 4(a0)\n"
-        "sw s7,  10 * 4(a0)\n"
-        "sw s8,  11 * 4(a0)\n"
-        "sw s9,  12 * 4(a0)\n"
-        "sw s10, 13 * 4(a0)\n"
-        "sw s11, 14 * 4(a0)\n"
+        "sw s0,  2  * 4(a0)\n"
+        "sw s1,  3  * 4(a0)\n"
+        "sw s2,  4  * 4(a0)\n"
+        "sw s3,  5  * 4(a0)\n"
+        "sw s4,  6  * 4(a0)\n"
+        "sw s5,  7  * 4(a0)\n"
+        "sw s6,  8  * 4(a0)\n"
+        "sw s7,  9 * 4(a0)\n"
+        "sw s8,  10 * 4(a0)\n"
+        "sw s9,  11 * 4(a0)\n"
+        "sw s10, 12 * 4(a0)\n"
+        "sw s11, 13 * 4(a0)\n"
 
         "lw ra,  0  * 4(a1)\n" // Restore callee-saved registers only
         "lw sp,  1  * 4(a1)\n" // Restore callee-saved registers only

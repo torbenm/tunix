@@ -5,22 +5,27 @@
 #include "panic.h"
 #include "proc.h"
 #include "syscall.h"
+#include "mem.h"
 
 void trap_panic(const char *mesg)
 {
     uint32_t scause = READ_CSR(scause);
     uint32_t stval = READ_CSR(stval);
     uint32_t user_pc = READ_CSR(sepc);
-
     PANIC("\n\n%s scause=0x%x, stval=0x%x, sepc=0x%x\n", mesg, scause, stval, user_pc);
+}
+
+void leavetrap(struct trap_frame *f)
+{
+    WRITE_CSR(sepc, f->epc);
+    trap_exit();
 }
 
 void handle_trap(struct trap_frame *f)
 {
     uint32_t scause = READ_CSR(scause);
     uint32_t stval = READ_CSR(stval);
-    uint32_t user_pc = READ_CSR(sepc);
-    char *err_mesg;
+    f->epc = READ_CSR(sepc);
 
     switch (scause)
     {
@@ -31,7 +36,7 @@ void handle_trap(struct trap_frame *f)
         break;
     case SCAUSE_ECALL:
         handle_syscall(f);
-        user_pc += 4; // increase program counter so that we skip to the next instruction
+        f->epc += 4; // increase program counter so that we skip to the next instruction
         break;
     // Error Handling below...
     case SCAUSE_PAGE_FAULT:
@@ -47,7 +52,7 @@ void handle_trap(struct trap_frame *f)
         trap_panic("Unexpected Trap!");
         break;
     }
-    WRITE_CSR(sepc, user_pc);
+    leavetrap(f);
 }
 
 __attribute__((naked))
@@ -56,82 +61,99 @@ trap_entry(void)
 {
     __asm__ __volatile__(
         // Retrieve the kernel stack of the running process from sscratch.
-        "csrrw sp, sscratch, sp\n"
-        "addi sp, sp, -4 * 31\n"
-        "sw ra,  4 * 0(sp)\n"
-        "sw gp,  4 * 1(sp)\n"
-        "sw tp,  4 * 2(sp)\n"
-        "sw t0,  4 * 3(sp)\n"
-        "sw t1,  4 * 4(sp)\n"
-        "sw t2,  4 * 5(sp)\n"
-        "sw t3,  4 * 6(sp)\n"
-        "sw t4,  4 * 7(sp)\n"
-        "sw t5,  4 * 8(sp)\n"
-        "sw t6,  4 * 9(sp)\n"
-        "sw a0,  4 * 10(sp)\n"
-        "sw a1,  4 * 11(sp)\n"
-        "sw a2,  4 * 12(sp)\n"
-        "sw a3,  4 * 13(sp)\n"
-        "sw a4,  4 * 14(sp)\n"
-        "sw a5,  4 * 15(sp)\n"
-        "sw a6,  4 * 16(sp)\n"
-        "sw a7,  4 * 17(sp)\n"
-        "sw s0,  4 * 18(sp)\n"
-        "sw s1,  4 * 19(sp)\n"
-        "sw s2,  4 * 20(sp)\n"
-        "sw s3,  4 * 21(sp)\n"
-        "sw s4,  4 * 22(sp)\n"
-        "sw s5,  4 * 23(sp)\n"
-        "sw s6,  4 * 24(sp)\n"
-        "sw s7,  4 * 25(sp)\n"
-        "sw s8,  4 * 26(sp)\n"
-        "sw s9,  4 * 27(sp)\n"
-        "sw s10, 4 * 28(sp)\n"
-        "sw s11, 4 * 29(sp)\n"
-
-        // Retrieve and save the sp at the time of exception.
-        "csrr a0, sscratch\n"
-        "sw a0,  4 * 30(sp)\n"
-
-        // Reset the kernel stack.
-        "addi a0, sp, 4 * 31\n"
+        // Store a0 to cscratch so that we can reuse it for other purposes...
         "csrw sscratch, a0\n"
+        // Now we can load the vappr for the trapframe here (always at the same location).
+        "li a0, %[TRAPFRAME]\n"
+        "sw ra,  4 * 0(a0)\n"
+        "sw gp,  4 * 1(a0)\n"
+        "sw tp,  4 * 2(a0)\n"
+        "sw t0,  4 * 3(a0)\n"
+        "sw t1,  4 * 4(a0)\n"
+        "sw t2,  4 * 5(a0)\n"
+        "sw t3,  4 * 6(a0)\n"
+        "sw t4,  4 * 7(a0)\n"
+        "sw t5,  4 * 8(a0)\n"
+        "sw t6,  4 * 9(a0)\n"
 
-        "mv a0, sp\n"
+        "sw a1,  4 * 11(a0)\n"
+        "sw a2,  4 * 12(a0)\n"
+        "sw a3,  4 * 13(a0)\n"
+        "sw a4,  4 * 14(a0)\n"
+        "sw a5,  4 * 15(a0)\n"
+        "sw a6,  4 * 16(a0)\n"
+        "sw a7,  4 * 17(a0)\n"
+        "sw s0,  4 * 18(a0)\n"
+        "sw s1,  4 * 19(a0)\n"
+        "sw s2,  4 * 20(a0)\n"
+        "sw s3,  4 * 21(a0)\n"
+        "sw s4,  4 * 22(a0)\n"
+        "sw s5,  4 * 23(a0)\n"
+        "sw s6,  4 * 24(a0)\n"
+        "sw s7,  4 * 25(a0)\n"
+        "sw s8,  4 * 26(a0)\n"
+        "sw s9,  4 * 27(a0)\n"
+        "sw s10, 4 * 28(a0)\n"
+        "sw s11, 4 * 29(a0)\n"
+        "sw sp, 4 * 30(a0)\n"
+
+        // Save original a0 in trap frame via a1
+        "csrr a1, sscratch\n"
+        "sw a1, 4 * 10(a0)\n"
+
+        // // Reset the kernel stack.
+        // "addi a0, sp, 4 * 31\n"
+        // "csrw sscratch, a0\n"
+
         "call handle_trap\n"
 
-        "lw ra,  4 * 0(sp)\n"
-        "lw gp,  4 * 1(sp)\n"
-        "lw tp,  4 * 2(sp)\n"
-        "lw t0,  4 * 3(sp)\n"
-        "lw t1,  4 * 4(sp)\n"
-        "lw t2,  4 * 5(sp)\n"
-        "lw t3,  4 * 6(sp)\n"
-        "lw t4,  4 * 7(sp)\n"
-        "lw t5,  4 * 8(sp)\n"
-        "lw t6,  4 * 9(sp)\n"
-        "lw a0,  4 * 10(sp)\n"
-        "lw a1,  4 * 11(sp)\n"
-        "lw a2,  4 * 12(sp)\n"
-        "lw a3,  4 * 13(sp)\n"
-        "lw a4,  4 * 14(sp)\n"
-        "lw a5,  4 * 15(sp)\n"
-        "lw a6,  4 * 16(sp)\n"
-        "lw a7,  4 * 17(sp)\n"
-        "lw s0,  4 * 18(sp)\n"
-        "lw s1,  4 * 19(sp)\n"
-        "lw s2,  4 * 20(sp)\n"
-        "lw s3,  4 * 21(sp)\n"
-        "lw s4,  4 * 22(sp)\n"
-        "lw s5,  4 * 23(sp)\n"
-        "lw s6,  4 * 24(sp)\n"
-        "lw s7,  4 * 25(sp)\n"
-        "lw s8,  4 * 26(sp)\n"
-        "lw s9,  4 * 27(sp)\n"
-        "lw s10, 4 * 28(sp)\n"
-        "lw s11, 4 * 29(sp)\n"
-        "lw sp,  4 * 30(sp)\n"
-        "sret\n");
+        :
+        : [TRAPFRAME] "i"(VIRT_TRAP_TABLE));
+}
+
+__attribute__((naked))
+__attribute__((aligned(4))) void
+trap_exit(void)
+{
+
+    __asm__ __volatile__(
+        "li a0, %[TRAPFRAME]\n"
+        // Restore the trap table
+        "lw ra,  4 * 0(a0)\n"
+        "lw gp,  4 * 1(a0)\n"
+        "lw tp,  4 * 2(a0)\n"
+        "lw t0,  4 * 3(a0)\n"
+        "lw t1,  4 * 4(a0)\n"
+        "lw t2,  4 * 5(a0)\n"
+        "lw t3,  4 * 6(a0)\n"
+        "lw t4,  4 * 7(a0)\n"
+        "lw t5,  4 * 8(a0)\n"
+        "lw t6,  4 * 9(a0)\n"
+        "lw a1,  4 * 11(a0)\n"
+        "lw a2,  4 * 12(a0)\n"
+        "lw a3,  4 * 13(a0)\n"
+        "lw a4,  4 * 14(a0)\n"
+        "lw a5,  4 * 15(a0)\n"
+        "lw a6,  4 * 16(a0)\n"
+        "lw a7,  4 * 17(a0)\n"
+        "lw s0,  4 * 18(a0)\n"
+        "lw s1,  4 * 19(a0)\n"
+        "lw s2,  4 * 20(a0)\n"
+        "lw s3,  4 * 21(a0)\n"
+        "lw s4,  4 * 22(a0)\n"
+        "lw s5,  4 * 23(a0)\n"
+        "lw s6,  4 * 24(a0)\n"
+        "lw s7,  4 * 25(a0)\n"
+        "lw s8,  4 * 26(a0)\n"
+        "lw s9,  4 * 27(a0)\n"
+        "lw s10, 4 * 28(a0)\n"
+        "lw s11, 4 * 29(a0)\n"
+        "lw sp,  4 * 30(a0)\n"
+        // // We are just overwritng the loaded word
+        "lw a0,  4 * 10(a0)\n"
+        "sret\n"
+        :
+        : [TRAPFRAME] "i"(VIRT_TRAP_TABLE));
 }
 
 void next_timer()
