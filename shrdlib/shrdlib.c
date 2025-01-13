@@ -26,6 +26,25 @@ char *strcpy(char *dst, const char *src)
     return dst;
 }
 
+int strcopyuntil(char *dst, const char *src, int offset, int maxlen, char splitchar)
+{
+    int i = offset;
+    for (; i < offset + maxlen - 1 && src[i] != '\0' && src[i] != splitchar; i++)
+    {
+        dst[i - offset] = src[i];
+    }
+    dst[i - offset] = '\0';
+    // Two cases:
+    // (A) We stopped because maxlen was reached (should be an error!)
+    // (B) We stopped because the string ended (should be fine)
+    // (C) We stopped because the splitchar was found (should be fine) --> return i
+    if (i == offset + maxlen && src[i] != '\0')
+    {
+        return -1; // End found, but string did not end
+    }
+    return i;
+}
+
 int strcmp(const char *s1, const char *s2)
 {
     while (*s1 && *s2)
