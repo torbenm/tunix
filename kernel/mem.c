@@ -56,6 +56,38 @@ paddr_t alloc_pages(uint32_t n)
     return paddr;
 }
 
+void copy_pages(uint32_t *src_table, uint32_t *dst_table, uint32_t min, uint32_t max)
+{
+    for (uint32_t pt = min; pt < max; pt += PAGE_SIZE)
+    {
+        if (has_page(src_table, pt))
+        {
+            paddr_t page = alloc_pages(1);
+            // We assume that we can still fully access the vaddr - so that we do
+            memcpy((void *)page, (void *)pt, PAGE_SIZE);
+            map_page(dst_table, pt, page,
+                     PAGE_U | PAGE_R | PAGE_W | PAGE_X);
+        }
+        else
+        {
+            // Assumption that there is nothing else coming after.. exiting
+            return;
+        }
+    }
+}
+
+int has_page(uint32_t *table1, uint32_t vaddr)
+{
+    uint32_t vpn1 = (vaddr >> 22) & 0x3ff;
+    if ((table1[vpn1] & PAGE_V) == 0)
+    {
+        return 0;
+    }
+    uint32_t vpn0 = (vaddr >> 12) & 0x3ff;
+    uint32_t *table0 = (uint32_t *)((table1[vpn1] >> 10) * PAGE_SIZE);
+    return (table0[vpn0] & PAGE_V);
+}
+
 void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags)
 {
     /*

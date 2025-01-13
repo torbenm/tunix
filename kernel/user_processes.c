@@ -3,6 +3,7 @@
 #include "proc.h"
 
 extern char _binary_out_shell_bin_start[], _binary_out_shell_bin_size[];
+// extern char _binary_out_bg_bin_start[], _binary_out_bg_bin_size[];
 
 void start_shell_app()
 {

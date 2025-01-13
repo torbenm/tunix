@@ -24,6 +24,10 @@ void handle_syscall(struct trap_frame *f)
             yield();
         }
         break;
+    case SYS_GETPID:
+        printf("Getting pid");
+        f->a0 = currentproc()->pid;
+        break;
     case SYS_READFILE:
     case SYS_WRITEFILE:
     {
@@ -56,8 +60,11 @@ void handle_syscall(struct trap_frame *f)
         f->a0 = len;
         break;
     }
+    case SYS_SHUTDOWN:
+        shutdown();
+        break;
     case SYS_EXIT:
-        exit_current_process();
+        exit_current_process(f->a0);
         break;
     case SYS_FORK:
         f->a0 = fork();

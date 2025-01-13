@@ -4,6 +4,7 @@ KERNEL_FILE=kernel/out/kernel.elf
 
 # Apps to 'install'
 SHELL_FILE=apps/shell/out/shell.bin.o
+BG_FILE=apps/bg/out/bg.bin.o
 
 LLVM_HOME=/opt/homebrew/opt/llvm/bin
 
@@ -11,7 +12,9 @@ LLVM_HOME=/opt/homebrew/opt/llvm/bin
 DEPS=$(KERNEL_FILE)
 APPS=$(SHELL_FILE)
 
-disk.tar:
+disk.tar: $(BG_FILE)
+	rm -f disk/bg
+	# cp $(BG_FILE) disk/bg
 	cd disk && tar cf ../disk.tar --format=ustar *
 
 .phony: $(KERNEL_FILE)
@@ -21,6 +24,10 @@ $(KERNEL_FILE): $(APPS)
 .phony: $(SHELL_FILE)
 $(SHELL_FILE):
 	$(MAKE) -C apps/shell out/shell.bin.o
+
+.phony: $(BG_FILE)
+$(BG_FILE):
+	$(MAKE) -C apps/bg out/bg.bin.o
 
 .phony: boot
 boot: $(DEPS) disk.tar
@@ -48,5 +55,6 @@ clean:
 	make -C kernel clean
 	make -C apps/lib clean
 	make -C apps/shell clean
+	make -C apps/bg clean
 	make -C shrdlib clean
 	rm -f disk.tar

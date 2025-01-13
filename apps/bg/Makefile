@@ -1,6 +1,6 @@
 objects := $(patsubst %.c,%.o,$(wildcard *.c))
 
-NAME=shell
+NAME=bg
 
 OUT_DIR=out
 INC_DIR=includes

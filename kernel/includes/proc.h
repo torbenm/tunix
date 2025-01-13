@@ -44,6 +44,7 @@ struct process
 {
     int pid;                       // Process ID
     int state;                     // Process state
+    int exit_status;               // Exit status
     struct context context;        // Context
     struct trap_frame *trap_frame; // Trap Frame
     uint32_t *page_table;          // Page Table
@@ -66,6 +67,7 @@ void save_context(struct context *);
 void yield(void);
 void init_proc();
 void exit_current_process();
+struct process *currentproc();
 int idle();
 
 int fork(void);

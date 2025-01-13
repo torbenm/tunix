@@ -16,32 +16,36 @@ void main(void)
 
         if (strcmp(input, "hello") == 0)
             printf("Hello world from shell!\n");
-        else if (strcmp(input, "bgB") == 0)
+        else if (strcmp(input, "exec") == 0)
         {
-            printf("Starting bg proc...\n");
+            printf("Starting bg procs...\n");
             if (fork() == 0)
             {
                 background_proc('B');
+                return;
             }
             else
             {
-                printf("this is the parent...");
+                if (fork() == 0)
+                {
+                    background_proc('A');
+                }
+                else
+                {
+                    if (fork() == 0)
+                    {
+                        background_proc('C');
+                    }
+                }
             }
         }
-        else if (strcmp(input, "bgA") == 0)
+        else if (strcmp(input, "q") == 0)
         {
-            printf("Starting bg proc...\n");
-            if (fork() == 0)
-            {
-                background_proc('A');
-            }
-            else
-            {
-                printf("this is the parent...");
-            }
+            printf("Shutting system down.");
+            shutdown();
         }
         else if (strcmp(input, "exit") == 0)
-            exit();
+            return;
         else if (strcmp(input, "readfile") == 0)
         {
             char buf[128];
@@ -54,15 +58,14 @@ void main(void)
         else
             printf("unknown command: %s\n", input);
     }
-    for (;;)
-        ;
 }
 
 void background_proc(const char x)
 {
-    while (1)
+    for (int i = 0; i < 1000; i++)
     {
         putchar(x);
         sleep(3000000);
     }
+    // printf("Background proc for %c. Will terminate shortly...\n", x);
 }

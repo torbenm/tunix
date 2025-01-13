@@ -36,7 +36,6 @@ int idle()
     {
         if (procs[i].state != PROC_UNUSED && procs[i].state != PROC_EXITED && procs[i].pid > 0)
         {
-            printf("%d is %d\n", i, procs[i].state);
             has_processes = 1;
             break;
         }
@@ -50,15 +49,11 @@ int idle()
     return 1; // Keep idling
 }
 
-extern char _binary_out_shell_bin_start[], _binary_out_shell_bin_size[];
-
 int fork(void)
 {
-    // What we need to do:
-    // Copy memory
-    // Copy stack
-    // Copy registers
-    struct process *proc = create_process(_binary_out_shell_bin_start, (size_t)_binary_out_shell_bin_size);
+    struct process *proc = alloc_proc();
+
+    copy_pages(current_proc->page_table, proc->page_table, USER_BASE, MAX_VIRT_ADDR);
 
     // Copy context...
     memcpy(proc->stack, current_proc->stack, sizeof(current_proc->stack));
@@ -67,6 +62,10 @@ int fork(void)
     proc->trap_frame->a0 = 0;
 
     return proc->pid;
+}
+struct process *currentproc()
+{
+    return current_proc;
 }
 
 struct process *find_next_proc()
@@ -90,7 +89,6 @@ struct process *find_next_proc()
     return proc;
 }
 
-// OLD Code...
 __attribute__((naked)) void enter_usermode(void)
 {
     __asm__ __volatile__(
@@ -150,19 +148,15 @@ struct process *create_process(const void *image, size_t image_size)
 
         // Fill and map the page.
         memcpy((void *)page, image + off, copy_size);
-        // printf("Mapping virtual aeddress %x to physical address %x\n", USER_BASE + off, page);
         map_page(proc->page_table, USER_BASE + off, page,
                  PAGE_U | PAGE_R | PAGE_W | PAGE_X);
     }
     proc->trap_frame->epc = USER_BASE;
-    // printf("Initialized.");
     return proc;
 }
 
 void yield(void)
 {
-    // Debugging --
-    // putchar('~');
     // Search for a runnable process
     struct process *next = idle_proc;
     for (int i = 0; i < PROCS_MAX; i++)
@@ -179,14 +173,6 @@ void yield(void)
     if (next == current_proc)
         return;
 
-    // printf("Next: %d\n", next->pid);
-    // printf("Next satp: %x\n", SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE));
-    // printf("Next sscratch: %x\n", (uint32_t)&next->stack[sizeof(next->stack)]);
-    // printf("Next sp: %x\n", next->context.sp);
-    // printf("Next ra: %x\n", next->context.ra);
-    // printf("Prev ra: %x\n", current_proc->context.ra);
-    // next->context.ra = (uint32_t)enter_usermode; // Why does it not have anything here by default?...
-    // printf("Next ra: %x\n", next->context.ra);
     __asm__ __volatile__(
         "sfence.vma\n"
         "csrw satp, %[satp]\n" // Page table...
@@ -195,31 +181,23 @@ void yield(void)
         // Don't forget the trailing comma!
         : [satp] "r"(SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE)));
 
-    // printf("Switching context now...\n");
-    // Context switch
     struct process *prev = current_proc;
     current_proc = next;
     switch_context(&prev->context, &next->context);
-    // printf("Prev ra: %x\n", current_proc->context.ra);
-    // printf("Unreachable");
 }
 
-void exit_process(int pid)
+void exit_process(int pid, int status)
 {
-    printf("process %d exited\n", pid);
+    printf("process %d exited with status %i\n", pid, status);
     // Pid is always index + 1
     procs[pid - 1].state = PROC_EXITED;
     yield();
     PANIC("unreachable");
 }
 
-void exit_current_process()
+void exit_current_process(int status)
 {
-    exit_process(current_proc->pid);
-}
-
-void init_process()
-{
+    exit_process(current_proc->pid, status);
 }
 
 __attribute((naked)) void save_context(struct context *context)

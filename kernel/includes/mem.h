@@ -10,12 +10,14 @@
 #define MAX_VIRT_ADDR 0x10000000
 #define VIRT_TRAP_TABLE (MAX_VIRT_ADDR - PAGE_SIZE)
 
-paddr_t alloc_pages(uint32_t n);
-
 typedef struct
 {
     paddr_t next_page;
 } mem_state;
 
 void mem_state_init(mem_state *state);
+
+paddr_t alloc_pages(uint32_t n);
+int has_page(uint32_t *table1, uint32_t vaddr);
+void copy_pages(uint32_t *src_table, uint32_t *dst_table, uint32_t min, uint32_t max);
 void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags);

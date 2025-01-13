@@ -4,11 +4,9 @@
 
 extern char __stack_top[];
 
-__attribute__((noreturn)) void exit(void)
+__attribute__((noreturn)) void exit(int status)
 {
-    syscall(SYS_EXIT, 0, 0, 0);
-    for (;;)
-        ;
+    syscall(SYS_EXIT, status, 0, 0);
 }
 
 void putchar(char c)
@@ -21,9 +19,19 @@ int getchar()
     return syscall(SYS_GETCHAR, 0, 0, 0);
 }
 
+int getpid()
+{
+    return syscall(SYS_GETPID, 0, 0, 0);
+}
+
 int fork()
 {
     return syscall(SYS_FORK, 0, 0, 0);
+}
+
+void shutdown()
+{
+    syscall(SYS_SHUTDOWN, 0, 0, 0);
 }
 
 void yield()
@@ -48,6 +56,7 @@ start(void)
     __asm__ __volatile__(
         "mv sp, %[stack_top] \n"
         "call main           \n"
+        "li a0, 12           \n"
         "call exit           \n" ::[stack_top] "r"(__stack_top));
 }
 
